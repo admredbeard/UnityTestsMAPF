@@ -22,87 +22,126 @@ public class PathFinder : MonoBehaviour
         colors[4] = Color.cyan;
 
         InitMap();
-        List<Node> endPoints = new List<Node>();
-        endPoints.Add(map[19, 8]);
-        endPoints.Add(map[18, 9]);
-        endPoints.Add(map[18, 14]);
-        endPoints.Add(map[18, 15]);
-        endPoints.Add(map[12, 5]);
+        
 
-        endPoints.Add(map[12, 8]);
-        endPoints.Add(map[13, 6]);
-        endPoints.Add(map[15, 14]);
-        endPoints.Add(map[16, 14]);
-        endPoints.Add(map[15, 6]);
-
-
-        int test = 0;
-        foreach(Node nod in endPoints)
-        {
-            robots[test].transform.position = new Vector3(nod.position.x, nod.position.y, -1);
-            nod.SetEndPoint(true);
-            test++;
-        }
-        System.Diagnostics.Stopwatch st = new System.Diagnostics.Stopwatch();
-        st.Start();
-        path = FindPath(map[2, 1], endPoints[0], 0);
-        ShowPath(path.nodes);
-
-        path2 = FindPath(map[1, 1], endPoints[1], 0);
-        ShowPath(path2.nodes);
-
-        path3 = FindPath(map[3, 1], endPoints[2], 0);
-        ShowPath(path3.nodes);
-
-        path4 = FindPath(map[8, 3], endPoints[3], 0);
-        ShowPath(path4.nodes);
-
-        path5 = FindPath(map[5, 5], endPoints[4], 0);
-        ShowPath(path5.nodes);
-
-        path6 = FindPath(map[22, 5], endPoints[5], 0);
-        ShowPath(path6.nodes);
-
-        path7 = FindPath(map[24, 20], endPoints[6], 0);
-        ShowPath(path7.nodes);
-
-        path8 = FindPath(map[21, 4], endPoints[7], 0);
-        ShowPath(path8.nodes);
-
-        path9 = FindPath(map[28, 15], endPoints[8], 0);
-        ShowPath(path9.nodes);
-
-        path10 = FindPath(map[5, 20], endPoints[9], 0);
-        ShowPath(path10.nodes);
-        st.Stop();
-        Debug.Log(st.ElapsedMilliseconds);
-
-        Debug.Log(map[15, 10].timesteps[0]);
-        Debug.Log(map[15, 10].timesteps[1]);
-        StartCoroutine(VisualizeMovement());
+        Invoke("Test", 2f);
     }
 
-    Pathstruct path;
-    Pathstruct path2;
-    Pathstruct path3;
-    Pathstruct path4;
-    Pathstruct path5;
-    Pathstruct path6;
-    Pathstruct path7;
-    Pathstruct path8;
-    Pathstruct path9;
-    Pathstruct path10;
+    Node WorldPosToGridPos(Vector3 position)
+    {
+        int xPos = tileMap.WorldToCell(position).x + halfX;
+        int yPos = tileMap.WorldToCell(position).y + halfY;
+        return map[xPos,yPos];
+    }
 
-    int path1Count = 0;
-    int path2Count = 0;
-    int path3Count = 0;
-    int path4Count = 0;
-    int path5Count = 0;
-    int path6Count = 0;
-    int path7Count = 0;
-    int path8Count = 0;
-    int path9Count = 0;
-    int path10Count = 0;
+    List<Node> GetStartPoints()
+    {
+        List<Node> startpoints = new List<Node>();
+        for (int i = 0; i < robots.Length; i++)
+        {
+            GameObject temp = robots[i];
+            int randomIndex = Random.Range(i, robots.Length);
+            robots[i] = robots[randomIndex];
+            robots[randomIndex] = temp;
+        }
+
+
+        for (int i = 0; i < robots.Length; i++)
+        {
+            startpoints.Add(WorldPosToGridPos(robots[i].transform.position));
+        }
+
+        
+        foreach (Node nod in startpoints)
+        {
+            nod.SetEndPoint(true);
+        }
+        
+        return startpoints;
+
+    }
+    List<Node> GetEndPoints()
+    {
+        List<Node> endPoints = new List<Node>();
+        endPoints.Add(map[36, 20]);
+        endPoints.Add(map[37, 20]);
+        endPoints.Add(map[38, 20]);
+        endPoints.Add(map[39, 20]);
+        endPoints.Add(map[40, 20]);
+
+        endPoints.Add(map[36, 21]);
+        endPoints.Add(map[37, 21]);
+        endPoints.Add(map[38, 21]);
+        endPoints.Add(map[39, 21]);
+        endPoints.Add(map[40, 21]);
+
+        endPoints.Add(map[36, 2]);
+        endPoints.Add(map[37, 2]);
+        endPoints.Add(map[38, 2]);
+        endPoints.Add(map[39, 2]);
+        endPoints.Add(map[40, 2]);
+
+        endPoints.Add(map[36, 3]);
+        endPoints.Add(map[37, 3]);
+        endPoints.Add(map[38, 3]);
+        endPoints.Add(map[39, 3]);
+        endPoints.Add(map[40, 3]);
+        return endPoints;
+    }
+
+    public struct ListOfPaths
+    {
+        public List<Node> path;
+        public int count;
+    }
+
+    ListOfPaths[] paths;
+
+    private void Test()
+    {
+        List<Node> startPoints = GetStartPoints();
+        List<Node> endPoints = GetEndPoints();
+
+        paths = new ListOfPaths[startPoints.Count];
+        
+        System.Diagnostics.Stopwatch st = new System.Diagnostics.Stopwatch();
+        st.Start();
+
+        bool pathsFound = false;
+        int j = 0;
+        while (!pathsFound && j < 15)
+        {
+            pathsFound = true;
+            for (int i = 0; i < paths.Length; i++)
+            {
+                if(paths[i].path == null)
+                {
+                    paths[i].path = FindPath(startPoints[i], endPoints[0], j);
+                }
+                if(paths[i].path == null)
+                {
+                    pathsFound = false;
+                }
+                else
+                {
+                    startPoints[i].SetEndPoint(false);
+                }
+            }
+            j++;
+        }
+
+        for(int i = 0; i < paths.Length; i++)
+        {
+            paths[i].count = 0;
+            ShowPath(paths[i].path);
+        }
+        
+
+        st.Stop();
+        Debug.Log(st.ElapsedMilliseconds);
+        Debug.Log(longestPathCount);
+        StartCoroutine(VisualizeMovement());
+    }
 
 
 
@@ -111,76 +150,33 @@ public class PathFinder : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(0.5f);
-            if(path.nodes.Count > path1Count)
+            for(int i = 0; i < paths.Length; i++)
             {
-                robots[0].transform.position = new Vector3(path.nodes[path1Count].position.x, path.nodes[path1Count].position.y, -1);
-                path1Count++;
+                List<Node> route = paths[i].path;
+                if (route != null && route.Count > paths[i].count)
+                {
+                    robots[i].transform.position = new Vector3(route[paths[i].count].position.x, route[paths[i].count].position.y, -1);
+                    paths[i].count++;
+                }
             }
-            if (path2.nodes.Count > path2Count)
-            {
-                robots[1].transform.position = new Vector3(path2.nodes[path2Count].position.x, path2.nodes[path2Count].position.y, -1);
-                path2Count++;
-            }
-            if (path3.nodes.Count > path3Count)
-            {
-                robots[2].transform.position = new Vector3(path3.nodes[path3Count].position.x, path3.nodes[path3Count].position.y, -1);
-                path3Count++;
-            }
-            if (path4.nodes.Count > path4Count)
-            {
-                robots[3].transform.position = new Vector3(path4.nodes[path4Count].position.x, path4.nodes[path4Count].position.y, -1);
-                path4Count++;
-            }
-            if (path5.nodes.Count > path5Count)
-            {
-                robots[4].transform.position = new Vector3(path5.nodes[path5Count].position.x, path5.nodes[path5Count].position.y, -1);
-                path5Count++;
-            }
-            if (path6.nodes.Count > path6Count)
-            {
-                robots[5].transform.position = new Vector3(path6.nodes[path6Count].position.x, path6.nodes[path6Count].position.y, -1);
-                path6Count++;
-            }
-            if (path7.nodes.Count > path7Count)
-            {
-                robots[6].transform.position = new Vector3(path7.nodes[path7Count].position.x, path7.nodes[path7Count].position.y, -1);
-                path7Count++;
-            }
-            if (path8.nodes.Count > path8Count)
-            {
-                robots[7].transform.position = new Vector3(path8.nodes[path8Count].position.x, path8.nodes[path8Count].position.y, -1);
-                path8Count++;
-            }
-            if (path9.nodes.Count > path9Count)
-            {
-                robots[8].transform.position = new Vector3(path9.nodes[path9Count].position.x, path9.nodes[path9Count].position.y, -1);
-                path9Count++;
-            }
-            if (path10.nodes.Count > path10Count)
-            {
-                robots[9].transform.position = new Vector3(path10.nodes[path10Count].position.x, path10.nodes[path10Count].position.y, -1);
-                path10Count++;
-            }
-
         }
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    
 
     public Node[,] map;
+
+    Tilemap tileMap;
+    int halfX;
+    int halfY;
 
     void InitMap()
     {
         GameObject grid = GameObject.Find("Grid");
-        Tilemap tileMap = grid.GetComponentInChildren<Tilemap>();
+        tileMap = grid.GetComponentInChildren<Tilemap>();
         GridLayout gridLayout = grid.GetComponent<GridLayout>();
         Vector3Int total = tileMap.size;
-        int halfX = total.x / 2;
-        int halfY = total.y / 2;
+        halfX = total.x / 2;
+        halfY = total.y / 2;
         
 
         map = new Node[total.x, total.y];
@@ -191,11 +187,6 @@ public class PathFinder : MonoBehaviour
                 TileBase current = tileMap.GetTile(position);
                 if (current.name == "Tile")
                 {
-                    if(tileMap.GetCellCenterWorld(position).x == -5.5f && tileMap.GetCellCenterWorld(position).y == -1.5f)
-                    {
-                        Debug.Log(position.x + halfX);
-                        Debug.Log(position.y + halfY);
-                    }
                     map[position.x+halfX, position.y+halfY] = new Node(true, tileMap.GetCellCenterWorld(position), position.x+halfX, position.y+halfY);
                 }
                 else
@@ -210,13 +201,13 @@ public class PathFinder : MonoBehaviour
     int colorCount = 0;
     void ShowPath(List<Node> path)
     {
+        if (path == null)
+            return;
         GameObject gemObj = LinerendererPooling.SharedInstance.GetPooledVFX();
         LineRenderer lineR = gemObj.GetComponent<LineRenderer>();
         lineR.SetVertexCount(path.Count);
         
         lineR.material.color = colors[0];
-        //lineR.SetColors(colors[colorCount], colors[colorCount]);
-        //lineR.endColor = colors[colorCount];
         for (int i = 0; i < path.Count; i++)
         {
             
@@ -226,17 +217,17 @@ public class PathFinder : MonoBehaviour
         colorCount++;
     }
 
-    Pathstruct FindPath(Node _start, Node _goal, int startTime)
+    List<Node> FindPath(Node _start, Node _goal, int startTime)
     {
 
         List<Node> path = new List<Node>();
         List<Node> open = new List<Node>();
         List<Node> closed = new List<Node>();
-        _start.currentTimeStep = 0;
+        _start.currentTimeStep = startTime;
         open.Add(_start);
         int count = 0;
 
-        while (open.Count > 0 && count < 10000)
+        while (open.Count > 0 && count < 4000)
         {
 
             count++;
@@ -259,96 +250,109 @@ public class PathFinder : MonoBehaviour
             foreach (Node neighbour in GetNeighbours(current))
             {
                 if (!neighbour.traversable || closed.Contains(neighbour) || (neighbour.isEndPoint && _goal != neighbour))
+                {
                     continue;
+                }
+                    
+                
+                if(neighbour.timesteps.Contains(current.currentTimeStep + 1) && _goal != neighbour)
+                {
 
-                neighbour.SetCurrentTimestep(current.currentTimeStep + 1);
+                    continue;
+                }
+                
 
-                float newCost = current.gCost + GetDistance(neighbour, _goal);
+                float newCost = current.gCost + GetDistance(current, neighbour);
+                
                 if (newCost < neighbour.gCost || !open.Contains(neighbour))
                 {
-                    current.child = neighbour;
-                    neighbour.parent = current;
-                    neighbour.gCost = newCost;
-                    neighbour.hCost = Heuristic(neighbour, neighbour.currentTimeStep);
+                    if(neighbour.timesteps.Contains(current.currentTimeStep+1) && _goal != neighbour)
+                    {
+                        if (neighbour.timesteps.Contains(current.currentTimeStep + 2))
+                        {
+                            continue;
+                        }
+                        current.child = neighbour;
 
+                        neighbour.parent = current;
+                        neighbour.gCost = newCost;
 
+                        neighbour.hCost = Heuristic(neighbour, _goal, current.currentTimeStep + 2);
+                        neighbour.SetCurrentTimestep(current.currentTimeStep + 2);
+                    }
+                    else
+                    {
+                        current.child = neighbour;
+
+                        neighbour.parent = current;
+                        neighbour.gCost = newCost;
+
+                        neighbour.hCost = Heuristic(neighbour, _goal, current.currentTimeStep + 1);
+                        neighbour.SetCurrentTimestep(current.currentTimeStep + 1);
+
+                    }
                     if (!open.Contains(neighbour))
                         open.Add(neighbour);
-
+                    
                 }
             }
         }
         Debug.Log("Found no path");
-        return new Pathstruct();
+        return null;
     }
 
-    float Heuristic(Node nod, int timestep)
+    float Heuristic(Node nod, Node goal, int timestep)
     {
-        if (nod.timesteps.Contains(timestep))
-        {
-            return 2000;
-        }else if (nod.safeTimesteps.Contains(timestep))
+        int defaultCost = GetDistance(nod, goal);
+        if (nod.isEndPoint)
         {
             return 1000;
         }
-        /*
-        foreach(Node nud in GetNeighbours(nod))
+        
+        if (nod.timesteps != null && nod.safeTimesteps.Contains(timestep))
         {
-            if (nud.safeTimesteps.Contains(timestep) || nud.timesteps.Contains(timestep))
-            {
-                return 1000;
-            }
+            return nod.timesteps.Count * ((56 - defaultCost) * 2);
         }
-        */
-        return 5;
+        
+        return defaultCost;
     }
-
-    public struct Pathstruct
+    int longestPathCount = 0;
+    List<Node> Path(Node start, Node goal, int startTime)
     {
-        public List<Node> nodes;
-        public List<int> timestep;
-    }
-
-    Pathstruct Path(Node start, Node goal, int startTime)
-    {
-        Pathstruct newPath = new Pathstruct();
-        newPath.nodes = new List<Node>();
-        newPath.timestep = new List<int>();
-        start.AddTimestep(0);
-        start.AddSafeTimeStep(1);
+        List<Node> newPath = new List<Node>();
         Node current = goal;
-        int count = startTime + 1;
+        
         int currenttime = goal.currentTimeStep;
         while (current.position != start.position && current != null)
         {
-            while(currenttime != current.currentTimeStep)
+            newPath.Add(current);
+            while (currenttime != current.currentTimeStep)
             {
-                newPath.nodes.Add(current);
-                newPath.timestep.Add(currenttime);
+                newPath.Add(current);
                 currenttime--;
             }
             currenttime--;
-            newPath.nodes.Add(current);
-            newPath.timestep.Add(current.currentTimeStep);
             current = current.parent;
-
             if (current == null)
+
                 break;
         }
-        newPath.nodes.Reverse();
-        newPath.timestep.Reverse();
 
-        for (int i = 0; i < newPath.nodes.Count; i++)
+        for (int i = 0; i < startTime; i++)
         {
-            Debug.Log(newPath.nodes[i].currentTimeStep);
-            newPath.nodes[i].AddTimestep(newPath.nodes[i].currentTimeStep);
-            if(i-1 >= 0)
-            {
-                newPath.nodes[i - 1].AddSafeTimeStep(newPath.nodes[i].currentTimeStep);
-            }
-            newPath.nodes[i].SetCurrentTimestep(-1);
+            newPath.Add(start);
         }
+        newPath.Reverse();
         
+        for (int i = 0; i < newPath.Count; i++)
+        {
+            newPath[i].AddTimestep(i+1);
+            newPath[i].AddSafeTimeStep(i + 2);
+        }
+        if(newPath.Count > longestPathCount)
+        {
+            longestPathCount = newPath.Count;
+        }
         return newPath;
     }
     int GetDistance(Node nodeA, Node nodeB)
@@ -361,14 +365,10 @@ public class PathFinder : MonoBehaviour
     List<Node> GetNeighbours(Node node)
     {
         List<Node> neighbours = new List<Node>();
-        if(node.parent != map[node.xVal + 1, node.yVal])
-            neighbours.Add(map[node.xVal + 1, node.yVal]);
-        if (node.parent != map[node.xVal - 1, node.yVal])
-            neighbours.Add(map[node.xVal - 1, node.yVal]);
-        if(node.parent != map[node.xVal, node.yVal + 1])
-            neighbours.Add(map[node.xVal, node.yVal + 1]);
-        if(node.parent != map[node.xVal, node.yVal - 1])
-            neighbours.Add(map[node.xVal, node.yVal - 1]);
+        neighbours.Add(map[node.xVal + 1, node.yVal]);
+        neighbours.Add(map[node.xVal - 1, node.yVal]);
+        neighbours.Add(map[node.xVal, node.yVal + 1]);
+        neighbours.Add(map[node.xVal, node.yVal - 1]);
         return neighbours;
     }
 
